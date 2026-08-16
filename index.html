@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Premier University </title>
-  <subtitle>Group list of Student </subtitle>
+<title>Premier University</title>
+  <subtitle>Group list of Student</subtitle>
 <style>
   :root{
     --paper:#F5EFDD;
@@ -193,7 +193,18 @@
     display:inline-flex; align-items:center; gap:10px;
     background:var(--sage); color:#1F3A22; padding:8px 14px; border-radius:10px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size:18px; font-weight:700; letter-spacing:0.12em; margin-top:6px;
+    font-size:16px; font-weight:700; letter-spacing:0.06em; margin-top:6px;
+  }
+  .code-status{ font-size:12.5px; font-weight:600; margin-top:8px; }
+  .code-status.active{ color:#2C5A2A; }
+  .code-status.expired{ color:var(--rust); }
+  .rotate-row{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    margin-top:16px; padding-top:14px; border-top:1px dashed var(--line);
+  }
+  .rotate-row select{
+    padding:8px 10px; border-radius:8px; border:1px solid var(--line);
+    background:#FCFAF1; color:var(--ink); font-size:13.5px;
   }
   .copy-btn{
     border:none; background:#1F3A22; color:#EFEAD8; border-radius:6px;
@@ -229,10 +240,28 @@
     <!-- Step 1: enter class code -->
     <div class="card" id="joinCard">
       <h2>Join your class</h2>
-      <p class="hint">Ask your teacher for the class code, then enter it here.</p>
+      <p class="hint">Fill in your course details and the class code your teacher shared.</p>
+      <div class="row2">
+        <div class="field">
+          <label for="joinSemester">Semester</label>
+          <input type="text" id="joinSemester" placeholder="e.g. Fall 2026" />
+        </div>
+        <div class="field">
+          <label for="joinCourseCode">Course code</label>
+          <input type="text" id="joinCourseCode" class="id-mono" placeholder="e.g. BUS301" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="joinCourseName">Course name</label>
+        <input type="text" id="joinCourseName" placeholder="e.g. International Business" />
+      </div>
+      <div class="field">
+        <label for="joinSection">Section</label>
+        <input type="text" id="joinSection" placeholder="e.g. Section B" />
+      </div>
       <div class="field">
         <label for="classCodeInput">Class code</label>
-        <input type="text" id="classCodeInput" class="id-mono" placeholder="e.g. BUS204X" style="text-transform:uppercase;" />
+        <input type="text" id="classCodeInput" class="id-mono" placeholder="e.g. AB3F-7K2M-9XQP" style="text-transform:uppercase;" />
       </div>
       <button class="btn btn-primary" onclick="joinClass()" id="joinBtn">Continue</button>
       <div class="msg" id="joinMsg"></div>
@@ -245,6 +274,7 @@
           <div>
             <p class="hint" style="margin-bottom:2px;">Registering for</p>
             <h2 id="studentCourseName" style="margin-bottom:0;"></h2>
+            <p class="hint" id="studentCourseMeta" style="margin:2px 0 0;"></p>
           </div>
           <button class="small-link" onclick="leaveClass()">Not your class? Change code</button>
         </div>
@@ -313,9 +343,23 @@
       <div id="signupForm" style="display:none;">
         <h2 style="margin-top:0;">Create your course</h2>
         <p class="hint">This creates a private roster only you can open. You'll get a class code to share with students.</p>
+        <div class="row2">
+          <div class="field">
+            <label for="signupSemester">Semester</label>
+            <input type="text" id="signupSemester" placeholder="e.g. Fall 2026" />
+          </div>
+          <div class="field">
+            <label for="signupCourseCode">Course code</label>
+            <input type="text" id="signupCourseCode" class="id-mono" placeholder="e.g. BUS301" />
+          </div>
+        </div>
         <div class="field">
-          <label for="signupCourse">Course / section name</label>
-          <input type="text" id="signupCourse" placeholder="e.g. International Business — Section B" />
+          <label for="signupCourse">Course name</label>
+          <input type="text" id="signupCourse" placeholder="e.g. International Business" />
+        </div>
+        <div class="field">
+          <label for="signupSection">Section</label>
+          <input type="text" id="signupSection" placeholder="e.g. Section B" />
         </div>
         <div class="field">
           <label for="signupEmail">Email</label>
@@ -343,13 +387,29 @@
           <div>
             <p class="hint" style="margin-bottom:2px;">Course</p>
             <h2 class="course-name" id="dashCourseName"></h2>
-            <div>
-              <span class="code-badge" id="dashCode"></span>
-              <button class="copy-btn" onclick="copyCode()">Copy code</button>
-            </div>
+            <p class="hint" id="dashCourseMeta" style="margin:2px 0 0;"></p>
           </div>
           <button class="btn btn-ghost btn-sm" onclick="teacherLogout()">Log out</button>
         </div>
+
+        <div style="margin-top:14px;">
+          <span class="code-badge" id="dashCode"></span>
+          <button class="copy-btn" onclick="copyCode()">Copy code</button>
+          <div class="code-status" id="codeStatus"></div>
+        </div>
+
+        <div class="rotate-row">
+          <label for="codeDuration" style="margin-bottom:0; font-size:12.5px;">New code valid for</label>
+          <select id="codeDuration">
+            <option value="3600000">1 hour</option>
+            <option value="21600000">6 hours</option>
+            <option value="86400000" selected>24 hours</option>
+            <option value="259200000">3 days</option>
+            <option value="604800000">7 days</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="generateNewCode()" id="rotateBtn">Generate new code</button>
+        </div>
+        <p class="hint" style="margin:8px 0 0;">Generating a new code turns the old one off immediately. Already-submitted groups are never affected.</p>
       </div>
 
       <div class="card">
@@ -385,7 +445,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, deleteDoc,
-  collection, query, where, getDocs, serverTimestamp
+  collection, query, where, getDocs, serverTimestamp, Timestamp
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
 /* ---------------- Firebase init ---------------- */
@@ -407,11 +467,13 @@ setPersistence(auth, inMemoryPersistence).catch(() => {});
 /* ---------------- Config ---------------- */
 const MIN_MEMBERS = 4;
 const MAX_MEMBERS = 6;
+const DEFAULT_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours, used for the first code at signup
 
 let memberRowCount = 0;
-let currentStudentCourse = null;    // { code, courseName }
-let currentTeacherCourse = null;    // { code, courseName, teacherUid }
-let loadedGroupsByKey = {};         // groupId -> { groupName, members:[{name,id}], marks:{idx:value} }
+let currentStudentCourse = null;   // { courseId, code, courseName }
+let currentTeacherCourse = null;   // { courseId, courseName, teacherUid, code, expiresAt }
+let loadedGroupsByKey = {};        // groupId -> { groupName, members:[{name,id}], marks:{idx:value} }
+let codeStatusInterval = null;
 
 /* ---------------- Tabs ---------------- */
 function switchTab(tab){
@@ -430,6 +492,12 @@ function slugify(name){
 }
 function normalizeId(id){
   return id.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+function normalizeCode(raw){
+  return raw.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+function formatCode(raw){
+  return (raw.match(/.{1,4}/g) || [raw]).join('-');
 }
 function escapeHtml(str){
   const d = document.createElement('div');
@@ -453,6 +521,25 @@ function formatTimestamp(ts){
     if(ts) return new Date(ts).toLocaleString();
   }catch(e){}
   return '';
+}
+function expiryMillis(expiresAt){
+  if(expiresAt && typeof expiresAt.toMillis === 'function') return expiresAt.toMillis();
+  if(expiresAt) return new Date(expiresAt).getTime();
+  return 0;
+}
+function isExpired(expiresAt){
+  return Date.now() >= expiryMillis(expiresAt);
+}
+function formatRemaining(expiresAt){
+  const ms = expiryMillis(expiresAt) - Date.now();
+  if(ms <= 0) return 'Expired';
+  const mins = Math.floor(ms / 60000);
+  const days = Math.floor(mins / 1440);
+  const hours = Math.floor((mins % 1440) / 60);
+  const remMins = mins % 60;
+  if(days > 0) return `Expires in ${days}d ${hours}h`;
+  if(hours > 0) return `Expires in ${hours}h ${remMins}m`;
+  return `Expires in ${Math.max(remMins,1)}m`;
 }
 function friendlyAuthError(e){
   const code = e && e.code ? e.code : '';
@@ -513,28 +600,39 @@ function updateMemberControls(){
 for(let i = 0; i < MIN_MEMBERS; i++) addMemberRow();
 
 /* ---------------- Firestore helpers ---------------- */
-// courses/{code}          -> { code, courseName, teacherUid, createdAt }   (publicly readable)
-// groups/{courseCode_slug}-> { courseCode, groupName, members:[{name,id}], submittedAt } (publicly readable)
-// marks/{courseCode_slug} -> { courseCode, marks:{ "0":"18/20", ... } }    (teacher-only)
+// courses/{courseId}      -> { courseId, courseName, teacherUid, createdAt, currentCode, currentCodeExpiresAt }
+// codes/{code}             -> { code, courseId, teacherUid, expiresAt, createdAt }   (public read; enforces expiry server-side too)
+// groups/{courseId_slug}   -> { courseId, code, groupName, members:[{name,id}], submittedAt }
+// marks/{groupId}          -> { courseId, marks:{ "0":"18/20", ... } }               (teacher-only)
 
-async function findCourseByCode(code){
-  const snap = await getDoc(doc(db, 'courses', code));
-  return snap.exists() ? snap.data() : null;
+function randomCourseCode(len){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I mix-ups
+  let out = '';
+  for(let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
 }
 
+async function findCodeDoc(code){
+  try{
+    const snap = await getDoc(doc(db, 'codes', code));
+    return snap.exists() ? snap.data() : null;
+  }catch(e){ return null; }
+}
+async function getCourseById(courseId){
+  const snap = await getDoc(doc(db, 'courses', courseId));
+  return snap.exists() ? snap.data() : null;
+}
 async function getMyCourse(uid){
   const q = query(collection(db, 'courses'), where('teacherUid', '==', uid));
   const snap = await getDocs(q);
   if(snap.empty) return null;
   return snap.docs[0].data();
 }
-
-async function getGroupsForCourse(code){
-  const q = query(collection(db, 'groups'), where('courseCode', '==', code));
+async function getGroupsForCourse(courseId){
+  const q = query(collection(db, 'groups'), where('courseId', '==', courseId));
   const snap = await getDocs(q);
   return snap.docs.map(d => ({ id: d.id, data: d.data() }));
 }
-
 async function getMarksDoc(groupId){
   try{
     const snap = await getDoc(doc(db, 'marks', groupId));
@@ -544,10 +642,41 @@ async function getMarksDoc(groupId){
   }
 }
 
+// Creates a brand-new code for a course, deletes the old one (if any), and
+// updates the course doc's "current code" pointer.
+async function generateCodeForCourse(courseId, teacherUid, durationMs, oldCode){
+  if(oldCode){
+    try{ await deleteDoc(doc(db, 'codes', oldCode)); }catch(e){}
+  }
+  let raw = randomCourseCode(12);
+  let attempts = 0;
+  while(await findCodeDoc(raw) && attempts < 8){
+    raw = randomCourseCode(12);
+    attempts++;
+  }
+  const expiresAt = Timestamp.fromDate(new Date(Date.now() + durationMs));
+  await setDoc(doc(db, 'codes', raw), {
+    code: raw, courseId, teacherUid, expiresAt, createdAt: serverTimestamp()
+  });
+  await setDoc(doc(db, 'courses', courseId), {
+    currentCode: raw, currentCodeExpiresAt: expiresAt
+  }, { merge: true });
+  return { code: raw, expiresAt };
+}
+
 /* ---------------- Student: join class ---------------- */
 async function joinClass(){
   hideMsg('joinMsg');
-  const raw = document.getElementById('classCodeInput').value.trim().toUpperCase();
+  const semester = document.getElementById('joinSemester').value.trim();
+  const courseCode = document.getElementById('joinCourseCode').value.trim();
+  const courseNameInput = document.getElementById('joinCourseName').value.trim();
+  const section = document.getElementById('joinSection').value.trim();
+  const raw = normalizeCode(document.getElementById('classCodeInput').value);
+
+  if(!semester || !courseCode || !courseNameInput || !section){
+    showMsg('joinMsg', 'Please fill in the semester, course code, course name, and section.', 'err');
+    return;
+  }
   if(!raw){
     showMsg('joinMsg', 'Please enter a class code.', 'err');
     return;
@@ -556,13 +685,29 @@ async function joinClass(){
   joinBtn.disabled = true;
   joinBtn.textContent = 'Checking…';
   try{
-    const course = await findCourseByCode(raw);
-    if(!course){
+    const codeDoc = await findCodeDoc(raw);
+    if(!codeDoc){
       showMsg('joinMsg', 'That code was not found. Please check with your teacher and try again.', 'err');
       return;
     }
-    currentStudentCourse = { code: course.code, courseName: course.courseName };
-    document.getElementById('studentCourseName').textContent = course.courseName;
+    if(isExpired(codeDoc.expiresAt)){
+      showMsg('joinMsg', 'This code has expired. Please ask your teacher for a new one.', 'err');
+      return;
+    }
+    const course = await getCourseById(codeDoc.courseId);
+    if(!course){
+      showMsg('joinMsg', 'Could not find that course. Please check with your teacher.', 'err');
+      return;
+    }
+    const matches = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase();
+    if(!matches(semester, course.semester) || !matches(courseCode, course.courseCode) || !matches(courseNameInput, course.courseName) || !matches(section, course.section)){
+      showMsg('joinMsg', "Those details don't match this class code. Please double-check the semester, course code, course name, and section with your teacher.", 'err');
+      return;
+    }
+    currentStudentCourse = { courseId: codeDoc.courseId, code: raw, courseName: course.courseName, courseCode: course.courseCode, semester: course.semester, section: course.section };
+    document.getElementById('studentCourseName').textContent = currentStudentCourse.courseName;
+    document.getElementById('studentCourseMeta').textContent =
+      [currentStudentCourse.courseCode, currentStudentCourse.section, currentStudentCourse.semester].filter(Boolean).join(' · ');
     document.getElementById('joinCard').style.display = 'none';
     document.getElementById('studentRegisterArea').style.display = 'block';
     loadTakenNames();
@@ -576,6 +721,10 @@ async function joinClass(){
 function leaveClass(){
   currentStudentCourse = null;
   document.getElementById('classCodeInput').value = '';
+  document.getElementById('joinSemester').value = '';
+  document.getElementById('joinCourseCode').value = '';
+  document.getElementById('joinCourseName').value = '';
+  document.getElementById('joinSection').value = '';
   document.getElementById('studentRegisterArea').style.display = 'none';
   document.getElementById('joinCard').style.display = 'block';
   hideMsg('joinMsg');
@@ -586,7 +735,7 @@ async function loadTakenNames(){
   const wrap = document.getElementById('takenNamesWrap');
   if(!currentStudentCourse) return;
   try{
-    const groups = await getGroupsForCourse(currentStudentCourse.code);
+    const groups = await getGroupsForCourse(currentStudentCourse.courseId);
     if(groups.length === 0){
       wrap.innerHTML = '<p class="empty-note">No groups submitted yet — be the first!</p>';
       return;
@@ -638,20 +787,28 @@ async function submitGroup(){
     showMsg('studentMsg', 'Please use a group name with letters or numbers.', 'err');
     return;
   }
-  const groupId = currentStudentCourse.code + '_' + slug;
+  const groupId = currentStudentCourse.courseId + '_' + slug;
 
   const submitBtn = document.getElementById('submitBtn');
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submitting…';
 
   try{
+    // Re-check the code is still valid right before saving — it may have
+    // expired or been rotated since the student opened this page.
+    const freshCode = await findCodeDoc(currentStudentCourse.code);
+    if(!freshCode || isExpired(freshCode.expiresAt)){
+      showMsg('studentMsg', 'This class code has expired. Please ask your teacher for a new one and rejoin.', 'err');
+      return;
+    }
+
     const existingSnap = await getDoc(doc(db, 'groups', groupId));
     if(existingSnap.exists()){
       showMsg('studentMsg', 'That group name is already taken in this class. Please choose a different one.', 'err');
       return;
     }
 
-    const allGroups = await getGroupsForCourse(currentStudentCourse.code);
+    const allGroups = await getGroupsForCourse(currentStudentCourse.courseId);
     for(const g of allGroups){
       for(const m of g.data.members){
         const existingNorm = normalizeId(m.id);
@@ -664,7 +821,8 @@ async function submitGroup(){
     }
 
     await setDoc(doc(db, 'groups', groupId), {
-      courseCode: currentStudentCourse.code,
+      courseId: currentStudentCourse.courseId,
+      code: currentStudentCourse.code,
       groupName: groupNameRaw,
       members: members,
       submittedAt: serverTimestamp()
@@ -675,6 +833,7 @@ async function submitGroup(){
     document.querySelectorAll('.member-name, .member-id').forEach(i => i.value = '');
     loadTakenNames();
   }catch(e){
+    console.error('Submit group error:', e);
     showMsg('studentMsg', 'Something went wrong saving your group: ' + (e && e.message ? e.message : e), 'err');
   }finally{
     submitBtn.disabled = false;
@@ -695,12 +854,18 @@ function setAuthMode(mode){
 /* ---------------- Teacher: sign up ---------------- */
 async function teacherSignup(){
   hideMsg('signupMsg');
+  const semester = document.getElementById('signupSemester').value.trim();
+  const courseCode = document.getElementById('signupCourseCode').value.trim();
   const courseName = document.getElementById('signupCourse').value.trim();
+  const section = document.getElementById('signupSection').value.trim();
   const email = document.getElementById('signupEmail').value.trim().toLowerCase();
   const pass = document.getElementById('signupPassword').value;
   const pass2 = document.getElementById('signupPassword2').value;
 
-  if(!courseName){ showMsg('signupMsg', 'Please enter a course or section name.', 'err'); return; }
+  if(!semester){ showMsg('signupMsg', 'Please enter the semester.', 'err'); return; }
+  if(!courseCode){ showMsg('signupMsg', 'Please enter the course code.', 'err'); return; }
+  if(!courseName){ showMsg('signupMsg', 'Please enter a course name.', 'err'); return; }
+  if(!section){ showMsg('signupMsg', 'Please enter the section.', 'err'); return; }
   if(!isValidEmail(email)){ showMsg('signupMsg', 'Please enter a valid email address.', 'err'); return; }
   if(pass.length < 6){ showMsg('signupMsg', 'Password must be at least 6 characters.', 'err'); return; }
   if(pass !== pass2){ showMsg('signupMsg', 'Passwords do not match.', 'err'); return; }
@@ -712,17 +877,14 @@ async function teacherSignup(){
   try{
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
 
-    let code = randomCourseCode(6);
-    let attempts = 0;
-    while(await findCourseByCode(code) && attempts < 8){
-      code = randomCourseCode(6);
-      attempts++;
-    }
+    const courseId = doc(collection(db, 'courses')).id;
+    await setDoc(doc(db, 'courses', courseId), {
+      courseId, semester, courseCode, courseName, section, teacherUid: cred.user.uid, createdAt: serverTimestamp()
+    });
 
-    const course = { code, courseName, teacherUid: cred.user.uid, createdAt: serverTimestamp() };
-    await setDoc(doc(db, 'courses', code), course);
+    const { code, expiresAt } = await generateCodeForCourse(courseId, cred.user.uid, DEFAULT_DURATION_MS, null);
 
-    currentTeacherCourse = { code, courseName, teacherUid: cred.user.uid };
+    currentTeacherCourse = { courseId, semester, courseCode, courseName, section, teacherUid: cred.user.uid, code, expiresAt };
     openTeacherDashboard();
   }catch(e){
     console.error('Signup error:', e);
@@ -731,12 +893,6 @@ async function teacherSignup(){
     signupBtn.disabled = false;
     signupBtn.textContent = 'Create account';
   }
-}
-function randomCourseCode(len){
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I mix-ups
-  let out = '';
-  for(let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
-  return out;
 }
 
 /* ---------------- Teacher: log in ---------------- */
@@ -761,7 +917,16 @@ async function teacherLogin(){
       showMsg('loginMsg', 'We found your account, but no course is linked to it yet.', 'err');
       return;
     }
-    currentTeacherCourse = course;
+    currentTeacherCourse = {
+      courseId: course.courseId,
+      semester: course.semester,
+      courseCode: course.courseCode,
+      courseName: course.courseName,
+      section: course.section,
+      teacherUid: course.teacherUid,
+      code: course.currentCode,
+      expiresAt: course.currentCodeExpiresAt
+    };
     openTeacherDashboard();
   }catch(e){
     console.error('Login error:', e);
@@ -776,18 +941,65 @@ function openTeacherDashboard(){
   document.getElementById('authCard').style.display = 'none';
   document.getElementById('teacherContent').style.display = 'block';
   document.getElementById('dashCourseName').textContent = currentTeacherCourse.courseName;
-  document.getElementById('dashCode').textContent = currentTeacherCourse.code;
+  document.getElementById('dashCourseMeta').textContent =
+    [currentTeacherCourse.courseCode, currentTeacherCourse.section, currentTeacherCourse.semester].filter(Boolean).join(' · ');
   document.getElementById('loginEmail').value = '';
   document.getElementById('loginPassword').value = '';
+  document.getElementById('signupSemester').value = '';
+  document.getElementById('signupCourseCode').value = '';
   document.getElementById('signupCourse').value = '';
+  document.getElementById('signupSection').value = '';
   document.getElementById('signupEmail').value = '';
   document.getElementById('signupPassword').value = '';
   document.getElementById('signupPassword2').value = '';
+  renderCodeStatus();
+  if(codeStatusInterval) clearInterval(codeStatusInterval);
+  codeStatusInterval = setInterval(renderCodeStatus, 30000);
   loadTeacherGroups();
+}
+
+function renderCodeStatus(){
+  if(!currentTeacherCourse) return;
+  const codeEl = document.getElementById('dashCode');
+  const statusEl = document.getElementById('codeStatus');
+  codeEl.textContent = currentTeacherCourse.code ? formatCode(currentTeacherCourse.code) : '—';
+  if(!currentTeacherCourse.code){
+    statusEl.textContent = 'No code yet — generate one below.';
+    statusEl.className = 'code-status';
+    return;
+  }
+  const expired = isExpired(currentTeacherCourse.expiresAt);
+  statusEl.textContent = expired
+    ? 'Expired — students can no longer submit with this code.'
+    : formatRemaining(currentTeacherCourse.expiresAt);
+  statusEl.className = 'code-status ' + (expired ? 'expired' : 'active');
+}
+
+async function generateNewCode(){
+  if(!currentTeacherCourse) return;
+  const durationMs = parseInt(document.getElementById('codeDuration').value, 10);
+  const rotateBtn = document.getElementById('rotateBtn');
+  rotateBtn.disabled = true;
+  rotateBtn.textContent = 'Generating…';
+  try{
+    const { code, expiresAt } = await generateCodeForCourse(
+      currentTeacherCourse.courseId, currentTeacherCourse.teacherUid, durationMs, currentTeacherCourse.code
+    );
+    currentTeacherCourse.code = code;
+    currentTeacherCourse.expiresAt = expiresAt;
+    renderCodeStatus();
+  }catch(e){
+    console.error('Generate code error:', e);
+    alert('Could not generate a new code: ' + (e && e.message ? e.message : e));
+  }finally{
+    rotateBtn.disabled = false;
+    rotateBtn.textContent = 'Generate new code';
+  }
 }
 
 async function teacherLogout(){
   try{ await signOut(auth); }catch(e){}
+  if(codeStatusInterval) clearInterval(codeStatusInterval);
   currentTeacherCourse = null;
   document.getElementById('teacherContent').style.display = 'none';
   document.getElementById('authCard').style.display = 'block';
@@ -795,7 +1007,7 @@ async function teacherLogout(){
 }
 
 function copyCode(){
-  if(!currentTeacherCourse) return;
+  if(!currentTeacherCourse || !currentTeacherCourse.code) return;
   const code = currentTeacherCourse.code;
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(code).catch(() => {});
@@ -809,7 +1021,7 @@ async function loadTeacherGroups(){
   const pill = document.getElementById('groupCountPill');
   list.innerHTML = '<p class="loading-note">Loading groups…</p>';
   try{
-    const groups = await getGroupsForCourse(currentTeacherCourse.code);
+    const groups = await getGroupsForCourse(currentTeacherCourse.courseId);
     if(groups.length === 0){
       list.innerHTML = '<p class="empty-note">No groups submitted yet.</p>';
       pill.textContent = '0 groups';
@@ -874,7 +1086,7 @@ async function saveMarks(groupId){
   saveBtn.textContent = 'Saving…';
   try{
     await setDoc(doc(db, 'marks', groupId), {
-      courseCode: currentTeacherCourse.code,
+      courseId: currentTeacherCourse.courseId,
       marks: marksObj,
       updatedAt: serverTimestamp()
     });
@@ -917,10 +1129,12 @@ async function downloadGroupsPDF(){
     pdfDoc.text(currentTeacherCourse.courseName, 14, 15);
     pdfDoc.setFontSize(10);
     pdfDoc.setTextColor(100);
-    pdfDoc.text(`Class code: ${currentTeacherCourse.code}  ·  Generated ${new Date().toLocaleString()}`, 14, 21);
+    const metaLine = [currentTeacherCourse.courseCode, currentTeacherCourse.semester].filter(Boolean).join(' · ');
+    if(metaLine) pdfDoc.text(metaLine, 14, 21);
+    pdfDoc.text(`Class code: ${formatCode(currentTeacherCourse.code || '')}  ·  Generated ${new Date().toLocaleString()}`, 14, metaLine ? 27 : 21);
 
     pdfDoc.autoTable({
-      startY: 26,
+      startY: metaLine ? 32 : 26,
       head: [['Group', 'Name', 'Student ID', 'Mark']],
       body: rows,
       styles: { fontSize: 9, cellPadding: 3 },
@@ -940,12 +1154,17 @@ async function deleteGroup(groupId){
   if(!confirm('Remove this group? This cannot be undone.')) return;
   try{
     await deleteDoc(doc(db, 'groups', groupId));
-    await deleteDoc(doc(db, 'marks', groupId));
-    loadTeacherGroups();
   }catch(e){
     console.error('Delete group error:', e);
     alert('Could not remove this group: ' + (e && e.message ? e.message : e));
+    return;
   }
+  try{
+    await deleteDoc(doc(db, 'marks', groupId));
+  }catch(e){
+    // No marks were ever saved for this group — nothing to clean up.
+  }
+  loadTeacherGroups();
 }
 
 /* ---------------- Expose handlers used by inline onclick= in the HTML ---------------- */
@@ -959,6 +1178,7 @@ window.teacherSignup = teacherSignup;
 window.teacherLogin = teacherLogin;
 window.teacherLogout = teacherLogout;
 window.copyCode = copyCode;
+window.generateNewCode = generateNewCode;
 window.loadTeacherGroups = loadTeacherGroups;
 window.downloadGroupsPDF = downloadGroupsPDF;
 window.saveMarks = saveMarks;
