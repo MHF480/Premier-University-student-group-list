@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Courses: public read (students need to check a class code),
+    // but only the signed-in owner can create/update/delete their own course.
+    match /courses/{code} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.resource.data.teacherUid == request.auth.uid;
+      allow update, delete: if request.auth != null
+                    && resource.data.teacherUid == request.auth.uid;
+    }
+
+    // Groups: public read (students check taken names + duplicate IDs),
+    // anyone can create a new group (students aren't logged in),
+    // but only the owning teacher can update/delete.
+    match /groups/{groupId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if request.auth != null
+                    && get(/databases/$(database)/documents/courses/$(resource.data.courseCode)).data.teacherUid == request.auth.uid;
+    }
+
+    // Marks: private. Only the signed-in teacher who owns the matching course
+    // can read or write marks. Students can never read this collection.
+    match /marks/{groupId} {
+      allow read, write: if request.auth != null
+                    && get(/databases/$(database)/documents/courses/$(request.resource == null ? resource.data.courseCode : request.resource.data.courseCode)).data.teacherUid == request.auth.uid;
+    }
+  }
+}

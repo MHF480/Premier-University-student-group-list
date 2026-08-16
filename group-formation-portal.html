@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Group Roster</title>
+<style>
+  :root{
+    --paper:#F5EFDD;
+    --paper-dark:#EAE1C6;
+    --ink:#20301F;
+    --board:#2B3A32;
+    --board-dark:#1E2A24;
+    --amber:#D99B12;
+    --amber-dark:#B47F0C;
+    --sage:#C9D4C5;
+    --rust:#B54834;
+    --line: rgba(32,48,31,0.18);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(32,48,31,0.06) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+  .id-mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing:0.02em; }
+
+  /* ---------- Header / chalkboard ---------- */
+  .board{
+    background: linear-gradient(180deg, var(--board), var(--board-dark));
+    color:#EFEAD8;
+    padding: 28px 20px 34px;
+    position:relative;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.12);
+  }
+  .board::after{
+    content:"";
+    position:absolute; left:0; right:0; bottom:-10px; height:10px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.15), transparent);
+  }
+  .board-inner{ max-width: 860px; margin:0 auto; text-align:center; }
+  .board h1{
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight:700;
+    font-size: clamp(28px, 5vw, 40px);
+    margin:0 0 6px;
+    letter-spacing:0.01em;
+  }
+  .chalk-underline{
+    width:120px; height:3px; margin:0 auto 14px;
+    background: repeating-linear-gradient(90deg, #EFEAD8 0 8px, transparent 8px 14px);
+    opacity:0.55; border-radius:2px;
+  }
+  .board p.sub{ margin:0; opacity:0.75; font-size:14px; }
+
+  .tabs{
+    display:flex; gap:10px; justify-content:center; margin-top:22px; flex-wrap:wrap;
+  }
+  .tab-btn{
+    appearance:none; border:1px solid rgba(239,234,216,0.35);
+    background: rgba(239,234,216,0.08);
+    color:#EFEAD8; padding:9px 18px; border-radius:999px;
+    font-size:14px; font-weight:600; cursor:pointer;
+    transition: all .15s ease;
+  }
+  .tab-btn:hover{ background: rgba(239,234,216,0.18); }
+  .tab-btn.active{ background:var(--amber); color:#2B2205; border-color:var(--amber); }
+
+  /* ---------- Layout ---------- */
+  .wrap{ max-width: 860px; margin: -14px auto 60px; padding: 0 20px; }
+  .card{
+    background:#FFFDF6;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:26px 24px;
+    box-shadow: 0 2px 0 rgba(32,48,31,0.05), 0 10px 24px -18px rgba(32,48,31,0.4);
+    margin-top:22px;
+  }
+  .card h2{
+    font-family: Georgia, serif; margin:0 0 4px; font-size:21px;
+  }
+  .card .hint{ color:#5B6B58; font-size:13.5px; margin:0 0 18px; }
+
+  label{ display:block; font-size:13px; font-weight:600; color:#3E4D3C; margin-bottom:6px; }
+  input[type=text], input[type=password], input[type=email]{
+    width:100%; padding:10px 12px; border-radius:9px;
+    border:1px solid var(--line); background:#FCFAF1; color:var(--ink);
+    font-size:14.5px; outline:none; transition:border-color .15s;
+  }
+  input:focus{ border-color: var(--amber-dark); box-shadow:0 0 0 3px rgba(217,155,18,0.18); }
+
+  .field{ margin-bottom:14px; }
+  .row2{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+  @media (max-width:560px){ .row2{ grid-template-columns:1fr; } }
+
+  .member-row{
+    display:grid; grid-template-columns: 26px 1fr 1fr; gap:10px; align-items:end;
+    padding:10px 0; border-bottom:1px dashed var(--line);
+  }
+  .member-row:last-of-type{ border-bottom:none; }
+  .member-num{
+    width:26px; height:26px; border-radius:50%; background:var(--sage);
+    color:#294A2B; font-size:12.5px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; margin-bottom:8px;
+  }
+
+  .btn{
+    appearance:none; border:none; cursor:pointer; border-radius:9px;
+    font-weight:700; font-size:14.5px; padding:11px 18px;
+    transition: transform .1s ease, box-shadow .15s ease;
+  }
+  .btn:active{ transform: translateY(1px); }
+  .btn-primary{ background: var(--amber); color:#2B2205; }
+  .btn-primary:hover{ background: var(--amber-dark); }
+  .btn-ghost{ background: transparent; color:var(--board); border:1px solid var(--line); }
+  .btn-ghost:hover{ background: rgba(43,58,50,0.06); }
+  .btn-danger{ background: transparent; color: var(--rust); border:1px solid rgba(181,72,52,0.35); padding:6px 12px; font-size:13px; }
+  .btn-danger:hover{ background: rgba(181,72,52,0.08); }
+  .btn-sm{ padding:8px 12px; font-size:13px; }
+  .btn[disabled]{ opacity:0.55; cursor:not-allowed; }
+  .btn-block{ width:100%; }
+
+  .actions{ display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; align-items:center; }
+
+  .msg{ padding:12px 14px; border-radius:9px; font-size:14px; margin-top:14px; display:none; }
+  .msg.show{ display:block; }
+  .msg.ok{ background:#E7F1E1; color:#2C5A2A; border:1px solid #BFDCB4; }
+  .msg.err{ background:#FBE9E5; color:#8C3524; border:1px solid #F0C5B9; }
+
+  .taken-wrap{ margin-top:20px; }
+  .taken-wrap h3{ font-size:13px; text-transform:uppercase; letter-spacing:0.05em; color:#6C7A6A; margin:0 0 8px; }
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{
+    background:var(--sage); color:#294A2B; font-size:12.5px; font-weight:600;
+    padding:5px 11px; border-radius:999px;
+  }
+  .empty-note{ color:#7C8A79; font-size:13px; }
+
+  /* ---------- Teacher table ---------- */
+  .toolbar{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;}
+  .count-pill{
+    background:var(--board); color:#EFEAD8; font-size:12.5px; font-weight:700;
+    padding:5px 12px; border-radius:999px;
+  }
+  .group-card{
+    border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:14px;
+    position:relative; background:#FFFDF6;
+  }
+  .group-card::before{
+    content:""; position:absolute; top:14px; left:-6px; width:12px; height:12px;
+    background:var(--amber); border-radius:50%; box-shadow:0 1px 2px rgba(0,0,0,0.25);
+  }
+  .group-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;}
+  .group-head h3{ font-family:Georgia, serif; margin:0; font-size:17px; }
+  .group-meta{ font-size:11.5px; color:#8A968A; margin-top:2px; }
+  .member-list{ margin-top:10px; display:grid; gap:6px; }
+  .member-list-head{
+    display:grid; grid-template-columns: 1fr 120px 90px; gap:8px;
+    font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#8A968A;
+    padding-bottom:4px; border-bottom:1px solid var(--line); margin-top:10px;
+  }
+  .member-line{
+    display:grid; grid-template-columns: 1fr 120px 90px; gap:8px; align-items:center;
+    font-size:13.5px;
+    border-bottom:1px dotted var(--line); padding-bottom:5px;
+  }
+  .member-line .m-id{ color:#4C5A49; }
+  .mark-input{
+    width:100%; padding:5px 8px; border-radius:6px;
+    border:1px solid var(--line); background:#FCFAF1; color:var(--ink);
+    font-size:13px; text-align:center; outline:none;
+  }
+  .mark-input:focus{ border-color: var(--amber-dark); box-shadow:0 0 0 2px rgba(217,155,18,0.18); }
+  .marks-foot{ display:flex; justify-content:space-between; align-items:center; margin-top:12px; gap:10px; flex-wrap:wrap; }
+  .marks-note{ font-size:11.5px; color:#8A968A; }
+
+  .auth-box{ max-width:380px; margin: 0 auto; }
+  .auth-toggle{ display:flex; gap:8px; margin-bottom:18px; }
+  .auth-toggle button{
+    flex:1; padding:9px; border-radius:8px; border:1px solid var(--line);
+    background:#FCFAF1; color:var(--board); font-weight:700; font-size:13.5px; cursor:pointer;
+  }
+  .auth-toggle button.active{ background:var(--board); color:#EFEAD8; border-color:var(--board); }
+  .small-link{ background:none; border:none; color:var(--amber-dark); font-size:13px; font-weight:600; cursor:pointer; padding:0; text-decoration:underline; }
+
+  .code-badge{
+    display:inline-flex; align-items:center; gap:10px;
+    background:var(--sage); color:#1F3A22; padding:8px 14px; border-radius:10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size:18px; font-weight:700; letter-spacing:0.12em; margin-top:6px;
+  }
+  .copy-btn{
+    border:none; background:#1F3A22; color:#EFEAD8; border-radius:6px;
+    padding:4px 9px; font-size:11px; cursor:pointer; letter-spacing:0; font-family:inherit; font-weight:600;
+  }
+  .dash-header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+  .course-name{ font-family:Georgia, serif; font-size:20px; margin:0 0 4px; }
+
+  .loading-note{ color:#7C8A79; font-size:13.5px; padding:10px 0; }
+
+  footer{ text-align:center; color:#8A968A; font-size:12px; margin:34px 0 10px; }
+</style>
+</head>
+<body>
+
+<div class="board">
+  <div class="board-inner">
+    <h1>Group Roster</h1>
+    <div class="chalk-underline"></div>
+    <p class="sub">Submit your assignment / presentation group — no more lost entries when everyone submits at once.</p>
+    <div class="tabs">
+      <button class="tab-btn active" id="tabStudentBtn" onclick="switchTab('student')">Student</button>
+      <button class="tab-btn" id="tabTeacherBtn" onclick="switchTab('teacher')">Teacher</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ============ STUDENT VIEW ============ -->
+  <div id="studentView">
+
+    <!-- Step 1: enter class code -->
+    <div class="card" id="joinCard">
+      <h2>Join your class</h2>
+      <p class="hint">Ask your teacher for the class code, then enter it here.</p>
+      <div class="field">
+        <label for="classCodeInput">Class code</label>
+        <input type="text" id="classCodeInput" class="id-mono" placeholder="e.g. BUS204X" style="text-transform:uppercase;" />
+      </div>
+      <button class="btn btn-primary" onclick="joinClass()" id="joinBtn">Continue</button>
+      <div class="msg" id="joinMsg"></div>
+    </div>
+
+    <!-- Step 2: register group (hidden until a valid class code is entered) -->
+    <div id="studentRegisterArea" style="display:none;">
+      <div class="card">
+        <div class="dash-header">
+          <div>
+            <p class="hint" style="margin-bottom:2px;">Registering for</p>
+            <h2 id="studentCourseName" style="margin-bottom:0;"></h2>
+          </div>
+          <button class="small-link" onclick="leaveClass()">Not your class? Change code</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Register your group</h2>
+        <p class="hint">Pick a group name and list every member's full name and student ID. Groups need 4 to 6 members.</p>
+
+        <div class="field">
+          <label for="groupName">Group name</label>
+          <input type="text" id="groupName" placeholder="e.g. Data Dynamos" />
+        </div>
+
+        <div id="membersWrap"></div>
+
+        <div class="actions" style="margin-top:6px;">
+          <button class="btn btn-ghost btn-sm" id="addMemberBtn" onclick="addMemberRow()">+ Add member</button>
+          <span class="empty-note" id="memberCountNote"></span>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" onclick="submitGroup()" id="submitBtn">Submit group</button>
+        </div>
+
+        <div class="msg" id="studentMsg"></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 4px; font-family:Georgia, serif; font-size:16px;">Group names already taken</h3>
+        <p class="hint" style="margin-bottom:12px;">Check here first so two people don't pick the same name.</p>
+        <div class="taken-wrap" id="takenNamesWrap">
+          <p class="empty-note">Loading…</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TEACHER VIEW ============ -->
+  <div id="teacherView" style="display:none;">
+
+    <!-- Not logged in: login / sign up -->
+    <div class="card auth-box" id="authCard">
+      <div class="auth-toggle">
+        <button id="loginToggleBtn" class="active" onclick="setAuthMode('login')">Log in</button>
+        <button id="signupToggleBtn" onclick="setAuthMode('signup')">Create account</button>
+      </div>
+
+      <!-- Login form -->
+      <div id="loginForm">
+        <h2 style="margin-top:0;">Teacher log in</h2>
+        <p class="hint">Only you can see and manage your course's groups.</p>
+        <div class="field">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" placeholder="you@university.edu" />
+        </div>
+        <div class="field">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="Your password" />
+        </div>
+        <button class="btn btn-primary btn-block" onclick="teacherLogin()" id="loginBtn">Log in</button>
+        <div class="msg" id="loginMsg"></div>
+      </div>
+
+      <!-- Sign up form -->
+      <div id="signupForm" style="display:none;">
+        <h2 style="margin-top:0;">Create your course</h2>
+        <p class="hint">This creates a private roster only you can open. You'll get a class code to share with students.</p>
+        <div class="field">
+          <label for="signupCourse">Course / section name</label>
+          <input type="text" id="signupCourse" placeholder="e.g. International Business — Section B" />
+        </div>
+        <div class="field">
+          <label for="signupEmail">Email</label>
+          <input type="email" id="signupEmail" placeholder="you@university.edu" />
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="signupPassword">Password</label>
+            <input type="password" id="signupPassword" placeholder="At least 6 characters" />
+          </div>
+          <div class="field">
+            <label for="signupPassword2">Confirm password</label>
+            <input type="password" id="signupPassword2" placeholder="Repeat password" />
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="teacherSignup()" id="signupBtn">Create account</button>
+        <div class="msg" id="signupMsg"></div>
+      </div>
+    </div>
+
+    <!-- Logged in: dashboard -->
+    <div id="teacherContent" style="display:none;">
+      <div class="card">
+        <div class="dash-header">
+          <div>
+            <p class="hint" style="margin-bottom:2px;">Course</p>
+            <h2 class="course-name" id="dashCourseName"></h2>
+            <div>
+              <span class="code-badge" id="dashCode"></span>
+              <button class="copy-btn" onclick="copyCode()">Copy code</button>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="teacherLogout()">Log out</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <h2 style="margin-bottom:2px;">Submitted groups</h2>
+            <p class="hint" style="margin:0;">Live list — refresh to pull in new submissions.</p>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <span class="count-pill" id="groupCountPill">0 groups</span>
+            <button class="btn btn-ghost btn-sm" onclick="loadTeacherGroups()">Refresh</button>
+            <button class="btn btn-primary btn-sm" onclick="downloadGroupsPDF()">Download PDF</button>
+          </div>
+        </div>
+        <div id="teacherList">
+          <p class="loading-note">Loading groups…</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>Built for classroom use · passwords are stored as one-way hashes, never as plain text</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+import {
+  getAuth, setPersistence, inMemoryPersistence,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, deleteDoc,
+  collection, query, where, getDocs, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+/* ---------------- Firebase init ---------------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyBBMSwws6J5uKZaJ-eH35nxxURRy856Yx4",
+  authDomain: "group-making-13d3f.firebaseapp.com",
+  projectId: "group-making-13d3f",
+  storageBucket: "group-making-13d3f.firebasestorage.app",
+  messagingSenderId: "1003324055132",
+  appId: "1:1003324055132:web:8f596b8a73e6e8ebe69099"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+// This page runs inside a restricted preview window, so we keep the login
+// in memory only (no browser storage). Refreshing the page logs the teacher out.
+setPersistence(auth, inMemoryPersistence).catch(() => {});
+
+/* ---------------- Config ---------------- */
+const MIN_MEMBERS = 4;
+const MAX_MEMBERS = 6;
+
+let memberRowCount = 0;
+let currentStudentCourse = null;    // { code, courseName }
+let currentTeacherCourse = null;    // { code, courseName, teacherUid }
+let loadedGroupsByKey = {};         // groupId -> { groupName, members:[{name,id}], marks:{idx:value} }
+
+/* ---------------- Tabs ---------------- */
+function switchTab(tab){
+  document.getElementById('studentView').style.display = tab === 'student' ? 'block' : 'none';
+  document.getElementById('teacherView').style.display = tab === 'teacher' ? 'block' : 'none';
+  document.getElementById('tabStudentBtn').classList.toggle('active', tab === 'student');
+  document.getElementById('tabTeacherBtn').classList.toggle('active', tab === 'teacher');
+  if(tab === 'teacher' && currentTeacherCourse){
+    loadTeacherGroups();
+  }
+}
+
+/* ---------------- General helpers ---------------- */
+function slugify(name){
+  return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+function normalizeId(id){
+  return id.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+function showMsg(elId, text, type){
+  const el = document.getElementById(elId);
+  el.textContent = text;
+  el.className = 'msg show ' + type;
+}
+function hideMsg(elId){
+  document.getElementById(elId).className = 'msg';
+}
+function isValidEmail(email){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+function formatTimestamp(ts){
+  try{
+    if(ts && typeof ts.toDate === 'function') return ts.toDate().toLocaleString();
+    if(ts) return new Date(ts).toLocaleString();
+  }catch(e){}
+  return '';
+}
+function friendlyAuthError(e){
+  const code = e && e.code ? e.code : '';
+  if(code === 'auth/email-already-in-use') return 'An account already exists for that email. Try logging in instead.';
+  if(code === 'auth/weak-password') return 'Password must be at least 6 characters.';
+  if(code === 'auth/invalid-email') return 'Please enter a valid email address.';
+  if(code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') return 'Incorrect email or password.';
+  return (e && e.message) ? e.message : 'Something went wrong. Please try again.';
+}
+
+/* ---------------- Member rows ---------------- */
+function addMemberRow(){
+  if(memberRowCount >= MAX_MEMBERS) return;
+  memberRowCount++;
+  const wrap = document.getElementById('membersWrap');
+  const row = document.createElement('div');
+  row.className = 'member-row';
+  row.dataset.idx = memberRowCount;
+  row.innerHTML = `
+    <div class="member-num">${memberRowCount}</div>
+    <div class="field" style="margin-bottom:0;">
+      <label>Full name</label>
+      <input type="text" class="member-name" placeholder="Student name" />
+    </div>
+    <div class="field" style="margin-bottom:0;">
+      <label>Student ID</label>
+      <input type="text" class="member-id id-mono" placeholder="e.g. 2023-11-042" />
+    </div>
+  `;
+  wrap.appendChild(row);
+  updateMemberControls();
+}
+function removeMemberRow(){
+  if(memberRowCount <= MIN_MEMBERS) return;
+  const wrap = document.getElementById('membersWrap');
+  wrap.removeChild(wrap.lastElementChild);
+  memberRowCount--;
+  updateMemberControls();
+}
+function updateMemberControls(){
+  const note = document.getElementById('memberCountNote');
+  note.textContent = `${memberRowCount} of ${MAX_MEMBERS} members`;
+  document.getElementById('addMemberBtn').disabled = memberRowCount >= MAX_MEMBERS;
+  let removeBtn = document.getElementById('removeMemberBtn');
+  if(memberRowCount > MIN_MEMBERS){
+    if(!removeBtn){
+      removeBtn = document.createElement('button');
+      removeBtn.id = 'removeMemberBtn';
+      removeBtn.className = 'btn btn-ghost btn-sm';
+      removeBtn.textContent = '– Remove last';
+      removeBtn.onclick = removeMemberRow;
+      document.getElementById('addMemberBtn').insertAdjacentElement('afterend', removeBtn);
+    }
+  } else if(removeBtn){
+    removeBtn.remove();
+  }
+}
+for(let i = 0; i < MIN_MEMBERS; i++) addMemberRow();
+
+/* ---------------- Firestore helpers ---------------- */
+// courses/{code}          -> { code, courseName, teacherUid, createdAt }   (publicly readable)
+// groups/{courseCode_slug}-> { courseCode, groupName, members:[{name,id}], submittedAt } (publicly readable)
+// marks/{courseCode_slug} -> { courseCode, marks:{ "0":"18/20", ... } }    (teacher-only)
+
+async function findCourseByCode(code){
+  const snap = await getDoc(doc(db, 'courses', code));
+  return snap.exists() ? snap.data() : null;
+}
+
+async function getMyCourse(uid){
+  const q = query(collection(db, 'courses'), where('teacherUid', '==', uid));
+  const snap = await getDocs(q);
+  if(snap.empty) return null;
+  return snap.docs[0].data();
+}
+
+async function getGroupsForCourse(code){
+  const q = query(collection(db, 'groups'), where('courseCode', '==', code));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, data: d.data() }));
+}
+
+async function getMarksDoc(groupId){
+  try{
+    const snap = await getDoc(doc(db, 'marks', groupId));
+    return snap.exists() ? snap.data() : null;
+  }catch(e){
+    return null; // not the owning teacher, or not logged in
+  }
+}
+
+/* ---------------- Student: join class ---------------- */
+async function joinClass(){
+  hideMsg('joinMsg');
+  const raw = document.getElementById('classCodeInput').value.trim().toUpperCase();
+  if(!raw){
+    showMsg('joinMsg', 'Please enter a class code.', 'err');
+    return;
+  }
+  const joinBtn = document.getElementById('joinBtn');
+  joinBtn.disabled = true;
+  joinBtn.textContent = 'Checking…';
+  try{
+    const course = await findCourseByCode(raw);
+    if(!course){
+      showMsg('joinMsg', 'That code was not found. Please check with your teacher and try again.', 'err');
+      return;
+    }
+    currentStudentCourse = { code: course.code, courseName: course.courseName };
+    document.getElementById('studentCourseName').textContent = course.courseName;
+    document.getElementById('joinCard').style.display = 'none';
+    document.getElementById('studentRegisterArea').style.display = 'block';
+    loadTakenNames();
+  }catch(e){
+    showMsg('joinMsg', 'Could not check that code right now: ' + (e && e.message ? e.message : e), 'err');
+  }finally{
+    joinBtn.disabled = false;
+    joinBtn.textContent = 'Continue';
+  }
+}
+function leaveClass(){
+  currentStudentCourse = null;
+  document.getElementById('classCodeInput').value = '';
+  document.getElementById('studentRegisterArea').style.display = 'none';
+  document.getElementById('joinCard').style.display = 'block';
+  hideMsg('joinMsg');
+}
+
+/* ---------------- Student: load taken names ---------------- */
+async function loadTakenNames(){
+  const wrap = document.getElementById('takenNamesWrap');
+  if(!currentStudentCourse) return;
+  try{
+    const groups = await getGroupsForCourse(currentStudentCourse.code);
+    if(groups.length === 0){
+      wrap.innerHTML = '<p class="empty-note">No groups submitted yet — be the first!</p>';
+      return;
+    }
+    wrap.innerHTML = '<div class="chips">' + groups.map(g => `<span class="chip">${escapeHtml(g.data.groupName)}</span>`).join('') + '</div>';
+  }catch(e){
+    wrap.innerHTML = '<p class="empty-note">Could not load taken names right now.</p>';
+  }
+}
+
+/* ---------------- Student: submit group ---------------- */
+async function submitGroup(){
+  hideMsg('studentMsg');
+  if(!currentStudentCourse){
+    showMsg('studentMsg', 'Please enter your class code first.', 'err');
+    return;
+  }
+  const groupNameRaw = document.getElementById('groupName').value.trim();
+  const rows = Array.from(document.querySelectorAll('.member-row'));
+  const members = rows.map(r => ({
+    name: r.querySelector('.member-name').value.trim(),
+    id: r.querySelector('.member-id').value.trim()
+  }));
+
+  if(!groupNameRaw){
+    showMsg('studentMsg', 'Please enter a group name.', 'err');
+    return;
+  }
+  if(members.length < MIN_MEMBERS || members.length > MAX_MEMBERS){
+    showMsg('studentMsg', `Groups must have ${MIN_MEMBERS} to ${MAX_MEMBERS} members.`, 'err');
+    return;
+  }
+  if(members.some(m => !m.name || !m.id)){
+    showMsg('studentMsg', "Please fill in every member's name and student ID.", 'err');
+    return;
+  }
+  const normIds = members.map(m => normalizeId(m.id));
+  if(normIds.some(id => !id)){
+    showMsg('studentMsg', 'One of the student IDs looks empty or invalid. Please check.', 'err');
+    return;
+  }
+  if(new Set(normIds).size !== normIds.length){
+    showMsg('studentMsg', 'Two members have the same student ID. Please check.', 'err');
+    return;
+  }
+
+  const slug = slugify(groupNameRaw);
+  if(!slug){
+    showMsg('studentMsg', 'Please use a group name with letters or numbers.', 'err');
+    return;
+  }
+  const groupId = currentStudentCourse.code + '_' + slug;
+
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting…';
+
+  try{
+    const existingSnap = await getDoc(doc(db, 'groups', groupId));
+    if(existingSnap.exists()){
+      showMsg('studentMsg', 'That group name is already taken in this class. Please choose a different one.', 'err');
+      return;
+    }
+
+    const allGroups = await getGroupsForCourse(currentStudentCourse.code);
+    for(const g of allGroups){
+      for(const m of g.data.members){
+        const existingNorm = normalizeId(m.id);
+        const clash = members.find(nm => normalizeId(nm.id) === existingNorm);
+        if(clash){
+          showMsg('studentMsg', `Student ID "${clash.id}" is already registered in group "${g.data.groupName}" (as ${m.name}). Please double-check the ID.`, 'err');
+          return;
+        }
+      }
+    }
+
+    await setDoc(doc(db, 'groups', groupId), {
+      courseCode: currentStudentCourse.code,
+      groupName: groupNameRaw,
+      members: members,
+      submittedAt: serverTimestamp()
+    });
+
+    showMsg('studentMsg', `"${groupNameRaw}" was submitted successfully with ${members.length} members.`, 'ok');
+    document.getElementById('groupName').value = '';
+    document.querySelectorAll('.member-name, .member-id').forEach(i => i.value = '');
+    loadTakenNames();
+  }catch(e){
+    showMsg('studentMsg', 'Something went wrong saving your group: ' + (e && e.message ? e.message : e), 'err');
+  }finally{
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit group';
+  }
+}
+
+/* ---------------- Teacher: auth mode toggle ---------------- */
+function setAuthMode(mode){
+  document.getElementById('loginToggleBtn').classList.toggle('active', mode === 'login');
+  document.getElementById('signupToggleBtn').classList.toggle('active', mode === 'signup');
+  document.getElementById('loginForm').style.display = mode === 'login' ? 'block' : 'none';
+  document.getElementById('signupForm').style.display = mode === 'signup' ? 'block' : 'none';
+  hideMsg('loginMsg');
+  hideMsg('signupMsg');
+}
+
+/* ---------------- Teacher: sign up ---------------- */
+async function teacherSignup(){
+  hideMsg('signupMsg');
+  const courseName = document.getElementById('signupCourse').value.trim();
+  const email = document.getElementById('signupEmail').value.trim().toLowerCase();
+  const pass = document.getElementById('signupPassword').value;
+  const pass2 = document.getElementById('signupPassword2').value;
+
+  if(!courseName){ showMsg('signupMsg', 'Please enter a course or section name.', 'err'); return; }
+  if(!isValidEmail(email)){ showMsg('signupMsg', 'Please enter a valid email address.', 'err'); return; }
+  if(pass.length < 6){ showMsg('signupMsg', 'Password must be at least 6 characters.', 'err'); return; }
+  if(pass !== pass2){ showMsg('signupMsg', 'Passwords do not match.', 'err'); return; }
+
+  const signupBtn = document.getElementById('signupBtn');
+  signupBtn.disabled = true;
+  signupBtn.textContent = 'Creating…';
+
+  try{
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+
+    let code = randomCourseCode(6);
+    let attempts = 0;
+    while(await findCourseByCode(code) && attempts < 8){
+      code = randomCourseCode(6);
+      attempts++;
+    }
+
+    const course = { code, courseName, teacherUid: cred.user.uid, createdAt: serverTimestamp() };
+    await setDoc(doc(db, 'courses', code), course);
+
+    currentTeacherCourse = { code, courseName, teacherUid: cred.user.uid };
+    openTeacherDashboard();
+  }catch(e){
+    console.error('Signup error:', e);
+    showMsg('signupMsg', friendlyAuthError(e), 'err');
+  }finally{
+    signupBtn.disabled = false;
+    signupBtn.textContent = 'Create account';
+  }
+}
+function randomCourseCode(len){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I mix-ups
+  let out = '';
+  for(let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+
+/* ---------------- Teacher: log in ---------------- */
+async function teacherLogin(){
+  hideMsg('loginMsg');
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pass = document.getElementById('loginPassword').value;
+
+  if(!isValidEmail(email) || !pass){
+    showMsg('loginMsg', 'Please enter your email and password.', 'err');
+    return;
+  }
+
+  const loginBtn = document.getElementById('loginBtn');
+  loginBtn.disabled = true;
+  loginBtn.textContent = 'Checking…';
+
+  try{
+    const cred = await signInWithEmailAndPassword(auth, email, pass);
+    const course = await getMyCourse(cred.user.uid);
+    if(!course){
+      showMsg('loginMsg', 'We found your account, but no course is linked to it yet.', 'err');
+      return;
+    }
+    currentTeacherCourse = course;
+    openTeacherDashboard();
+  }catch(e){
+    console.error('Login error:', e);
+    showMsg('loginMsg', friendlyAuthError(e), 'err');
+  }finally{
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Log in';
+  }
+}
+
+function openTeacherDashboard(){
+  document.getElementById('authCard').style.display = 'none';
+  document.getElementById('teacherContent').style.display = 'block';
+  document.getElementById('dashCourseName').textContent = currentTeacherCourse.courseName;
+  document.getElementById('dashCode').textContent = currentTeacherCourse.code;
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('signupCourse').value = '';
+  document.getElementById('signupEmail').value = '';
+  document.getElementById('signupPassword').value = '';
+  document.getElementById('signupPassword2').value = '';
+  loadTeacherGroups();
+}
+
+async function teacherLogout(){
+  try{ await signOut(auth); }catch(e){}
+  currentTeacherCourse = null;
+  document.getElementById('teacherContent').style.display = 'none';
+  document.getElementById('authCard').style.display = 'block';
+  setAuthMode('login');
+}
+
+function copyCode(){
+  if(!currentTeacherCourse) return;
+  const code = currentTeacherCourse.code;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(code).catch(() => {});
+  }
+}
+
+/* ---------------- Teacher: load groups + marks ---------------- */
+async function loadTeacherGroups(){
+  if(!currentTeacherCourse) return;
+  const list = document.getElementById('teacherList');
+  const pill = document.getElementById('groupCountPill');
+  list.innerHTML = '<p class="loading-note">Loading groups…</p>';
+  try{
+    const groups = await getGroupsForCourse(currentTeacherCourse.code);
+    if(groups.length === 0){
+      list.innerHTML = '<p class="empty-note">No groups submitted yet.</p>';
+      pill.textContent = '0 groups';
+      loadedGroupsByKey = {};
+      return;
+    }
+    const valid = groups.sort((a, b) => a.data.groupName.localeCompare(b.data.groupName));
+    pill.textContent = `${valid.length} group${valid.length === 1 ? '' : 's'}`;
+
+    const withMarks = await Promise.all(valid.map(async g => {
+      const marksDoc = await getMarksDoc(g.id);
+      return { id: g.id, data: g.data, marks: (marksDoc && marksDoc.marks) || {} };
+    }));
+
+    loadedGroupsByKey = {};
+    withMarks.forEach(g => { loadedGroupsByKey[g.id] = { groupName: g.data.groupName, members: g.data.members, marks: g.marks }; });
+
+    list.innerHTML = withMarks.map(g => {
+      const dateStr = formatTimestamp(g.data.submittedAt);
+      const membersHtml = g.data.members.map((m, idx) =>
+        `<div class="member-line">
+           <span>${escapeHtml(m.name)}</span>
+           <span class="id-mono m-id">${escapeHtml(m.id)}</span>
+           <input type="text" class="mark-input" data-idx="${idx}" value="${escapeHtml(g.marks[idx] || '')}" placeholder="—" />
+         </div>`
+      ).join('');
+      return `
+        <div class="group-card" data-key="${g.id}">
+          <div class="group-head">
+            <div>
+              <h3>${escapeHtml(g.data.groupName)}</h3>
+              <div class="group-meta">${g.data.members.length} members${dateStr ? ' · submitted ' + dateStr : ''}</div>
+            </div>
+            <button class="btn btn-danger" onclick="deleteGroup('${g.id}')">Remove</button>
+          </div>
+          <div class="member-list-head"><span>Name</span><span>Student ID</span><span>Mark</span></div>
+          <div class="member-list">${membersHtml}</div>
+          <div class="marks-foot">
+            <span class="marks-note">Marks are private — only visible here, not to students.</span>
+            <button class="btn btn-primary btn-sm" onclick="saveMarks('${g.id}')">Save marks</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }catch(e){
+    console.error('Load groups error:', e);
+    list.innerHTML = '<p class="empty-note">Could not load groups right now. Try refreshing.</p>';
+  }
+}
+
+async function saveMarks(groupId){
+  const cached = loadedGroupsByKey[groupId];
+  if(!cached || !currentTeacherCourse) return;
+  const card = document.querySelector(`.group-card[data-key="${groupId}"]`);
+  if(!card) return;
+  const inputs = card.querySelectorAll('.mark-input');
+  const marksObj = {};
+  inputs.forEach((inp, idx) => { marksObj[idx] = inp.value.trim(); });
+
+  const saveBtn = card.querySelector('.marks-foot .btn-primary');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+  try{
+    await setDoc(doc(db, 'marks', groupId), {
+      courseCode: currentTeacherCourse.code,
+      marks: marksObj,
+      updatedAt: serverTimestamp()
+    });
+    cached.marks = marksObj;
+    saveBtn.textContent = 'Saved ✓';
+    setTimeout(() => { saveBtn.textContent = 'Save marks'; saveBtn.disabled = false; }, 1400);
+  }catch(e){
+    console.error('Save marks error:', e);
+    saveBtn.textContent = 'Save marks';
+    saveBtn.disabled = false;
+    alert('Could not save marks: ' + (e && e.message ? e.message : e));
+  }
+}
+
+/* ---------------- Teacher: download PDF ---------------- */
+async function downloadGroupsPDF(){
+  if(!currentTeacherCourse) return;
+  try{
+    if(!window.jspdf || !window.jspdf.jsPDF){
+      alert('The PDF tool did not load. Please check your internet connection and try again.');
+      return;
+    }
+    const keys = Object.keys(loadedGroupsByKey);
+    if(keys.length === 0){
+      alert('There are no groups to save yet.');
+      return;
+    }
+    const rows = [];
+    keys.sort((a, b) => loadedGroupsByKey[a].groupName.localeCompare(loadedGroupsByKey[b].groupName));
+    keys.forEach(k => {
+      const g = loadedGroupsByKey[k];
+      g.members.forEach((m, idx) => {
+        rows.push([g.groupName, m.name, m.id, g.marks[idx] || '']);
+      });
+    });
+
+    const { jsPDF } = window.jspdf;
+    const pdfDoc = new jsPDF();
+    pdfDoc.setFontSize(14);
+    pdfDoc.text(currentTeacherCourse.courseName, 14, 15);
+    pdfDoc.setFontSize(10);
+    pdfDoc.setTextColor(100);
+    pdfDoc.text(`Class code: ${currentTeacherCourse.code}  ·  Generated ${new Date().toLocaleString()}`, 14, 21);
+
+    pdfDoc.autoTable({
+      startY: 26,
+      head: [['Group', 'Name', 'Student ID', 'Mark']],
+      body: rows,
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [43, 58, 50] },
+      alternateRowStyles: { fillColor: [245, 239, 221] }
+    });
+
+    const fileName = slugify(currentTeacherCourse.courseName || 'groups') + '-groups.pdf';
+    pdfDoc.save(fileName);
+  }catch(e){
+    console.error('PDF export error:', e);
+    alert('Could not create the PDF right now. Please try again.');
+  }
+}
+
+async function deleteGroup(groupId){
+  if(!confirm('Remove this group? This cannot be undone.')) return;
+  try{
+    await deleteDoc(doc(db, 'groups', groupId));
+    await deleteDoc(doc(db, 'marks', groupId));
+    loadTeacherGroups();
+  }catch(e){
+    console.error('Delete group error:', e);
+    alert('Could not remove this group: ' + (e && e.message ? e.message : e));
+  }
+}
+
+/* ---------------- Expose handlers used by inline onclick= in the HTML ---------------- */
+window.switchTab = switchTab;
+window.addMemberRow = addMemberRow;
+window.joinClass = joinClass;
+window.leaveClass = leaveClass;
+window.submitGroup = submitGroup;
+window.setAuthMode = setAuthMode;
+window.teacherSignup = teacherSignup;
+window.teacherLogin = teacherLogin;
+window.teacherLogout = teacherLogout;
+window.copyCode = copyCode;
+window.loadTeacherGroups = loadTeacherGroups;
+window.downloadGroupsPDF = downloadGroupsPDF;
+window.saveMarks = saveMarks;
+window.deleteGroup = deleteGroup;
+
+/* ---------------- Init ---------------- */
+updateMemberControls();
+</script>
+</body>
+</html>
