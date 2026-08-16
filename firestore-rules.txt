@@ -2,31 +2,76 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Courses: public read (students need to check a class code),
-    // but only the signed-in owner can create/update/delete their own course.
-    match /courses/{code} {
+    // Is the signed-in user the teacher who owns this course?
+    function isTeacherOfCourse(courseId) {
+      return request.auth != null
+             && exists(/databases/$(database)/documents/courses/$(courseId))
+             && get(/databases/$(database)/documents/courses/$(courseId)).data.teacherUid == request.auth.uid;
+    }
+
+    // Does this code exist, point at this course, and is it NOT expired yet?
+    // Checked at write time using request.time, so this is enforced by the
+    // database itself — not just by the website's own JavaScript.
+    function isValidCode(code, courseId) {
+      return exists(/databases/$(database)/documents/codes/$(code))
+             && get(/databases/$(database)/documents/codes/$(code)).data.courseId == courseId
+             && get(/databases/$(database)/documents/codes/$(code)).data.expiresAt > request.time;
+    }
+
+    match /courses/{courseId} {
       allow read: if true;
       allow create: if request.auth != null
-                    && request.resource.data.teacherUid == request.auth.uid;
-      allow update, delete: if request.auth != null
-                    && resource.data.teacherUid == request.auth.uid;
+                    && request.resource.data.teacherUid == request.auth.uid
+                    && request.resource.data.courseId == courseId
+                    && request.resource.data.courseName is string
+                    && request.resource.data.courseName.size() > 0
+                    && request.resource.data.courseName.size() < 200
+                    && request.resource.data.courseCode is string
+                    && request.resource.data.courseCode.size() > 0
+                    && request.resource.data.courseCode.size() < 50
+                    && request.resource.data.semester is string
+                    && request.resource.data.semester.size() > 0
+                    && request.resource.data.semester.size() < 50;
+      // Owner can update (e.g. rotate the current-code pointer) or delete their course.
+      allow update, delete: if isTeacherOfCourse(courseId);
     }
 
-    // Groups: public read (students check taken names + duplicate IDs),
-    // anyone can create a new group (students aren't logged in),
-    // but only the owning teacher can update/delete.
+    match /codes/{code} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.resource.data.teacherUid == request.auth.uid
+                    && request.resource.data.code == code
+                    && isTeacherOfCourse(request.resource.data.courseId)
+                    && request.resource.data.expiresAt is timestamp;
+      // Codes are immutable — rotating means delete the old one + create a new one.
+      allow update: if false;
+      allow delete: if request.auth != null && resource.data.teacherUid == request.auth.uid;
+    }
+
+    // Groups: public read (students check taken names + duplicate IDs).
+    // Anyone can create one (students aren't logged in) BUT the code used
+    // must be real, match the course, and not be expired — enforced here,
+    // so an expired code cannot be used even by a script that skips the page.
     match /groups/{groupId} {
       allow read: if true;
-      allow create: if true;
-      allow update, delete: if request.auth != null
-                    && get(/databases/$(database)/documents/courses/$(resource.data.courseCode)).data.teacherUid == request.auth.uid;
+      allow create: if request.resource.data.courseId is string
+                    && request.resource.data.code is string
+                    && isValidCode(request.resource.data.code, request.resource.data.courseId)
+                    && groupId.matches(request.resource.data.courseId + '_.*')
+                    && request.resource.data.groupName is string
+                    && request.resource.data.groupName.size() > 0
+                    && request.resource.data.groupName.size() < 100
+                    && request.resource.data.members is list
+                    && request.resource.data.members.size() >= 4
+                    && request.resource.data.members.size() <= 6;
+      allow update, delete: if isTeacherOfCourse(resource.data.courseId);
     }
 
-    // Marks: private. Only the signed-in teacher who owns the matching course
-    // can read or write marks. Students can never read this collection.
+    // Marks: private. Only the signed-in teacher who owns the matching
+    // course can read or write. Students can never reach this collection.
     match /marks/{groupId} {
-      allow read, write: if request.auth != null
-                    && get(/databases/$(database)/documents/courses/$(request.resource == null ? resource.data.courseCode : request.resource.data.courseCode)).data.teacherUid == request.auth.uid;
+      allow read, delete: if isTeacherOfCourse(resource.data.courseId);
+      allow create, update: if isTeacherOfCourse(request.resource.data.courseId);
     }
   }
 }
