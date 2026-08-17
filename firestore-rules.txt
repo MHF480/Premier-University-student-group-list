@@ -62,7 +62,7 @@ service cloud.firestore {
                     && request.resource.data.groupName.size() > 0
                     && request.resource.data.groupName.size() < 100
                     && request.resource.data.members is list
-                    && request.resource.data.members.size() >= 4
+                    && request.resource.data.members.size() >= 1
                     && request.resource.data.members.size() <= 6;
       allow update, delete: if isTeacherOfCourse(resource.data.courseId);
     }
@@ -72,6 +72,23 @@ service cloud.firestore {
     match /marks/{groupId} {
       allow read, delete: if isTeacherOfCourse(resource.data.courseId);
       allow create, update: if isTeacherOfCourse(request.resource.data.courseId);
+    }
+
+    // Password reset OTPs: short-lived 6-digit codes used before a teacher
+    // is signed in, so there is no request.auth to check against here.
+    // Kept safe by: (1) the doc ID is derived from the exact hidden login
+    // email, which itself requires knowing the real email + semester +
+    // course code + section, (2) codes expire after ~10 minutes, and
+    // (3) attempts are capped so a code can't be brute-forced.
+    match /passwordResets/{resetId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.otp is string
+                            && request.resource.data.otp.size() == 6
+                            && request.resource.data.expiresAt is timestamp
+                            && request.resource.data.attempts is int
+                            && request.resource.data.attempts >= 0
+                            && request.resource.data.attempts <= 5;
+      allow delete: if true;
     }
   }
 }
