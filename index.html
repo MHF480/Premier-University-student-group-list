@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Premier University</title>
+<title>Group Roster</title>
 <style>
   :root{
     --paper:#F5EFDD;
@@ -221,10 +221,9 @@
 
 <div class="board">
   <div class="board-inner">
-    <h1>Premier University</h1>
-    <h2>Group list of Student</h2>
+    <h1>Group Roster</h1>
     <div class="chalk-underline"></div>
-    <p class="sub">Submit your assignment / presentation group</p>
+    <p class="sub">Submit your assignment / presentation group — no more lost entries when everyone submits at once.</p>
     <div class="tabs">
       <button class="tab-btn active" id="tabStudentBtn" onclick="switchTab('student')">Student</button>
       <button class="tab-btn" id="tabTeacherBtn" onclick="switchTab('teacher')">Teacher</button>
@@ -248,16 +247,16 @@
         </div>
         <div class="field">
           <label for="joinCourseCode">Course code</label>
-          <input type="text" id="joinCourseCode" class="id-mono" placeholder="Course code" />
+          <input type="text" id="joinCourseCode" class="id-mono" placeholder="e.g. BUS301" />
         </div>
       </div>
       <div class="field">
         <label for="joinCourseName">Course name</label>
-        <input type="text" id="joinCourseName" placeholder="Course Name" />
+        <input type="text" id="joinCourseName" placeholder="e.g. International Business" />
       </div>
       <div class="field">
         <label for="joinSection">Section</label>
-        <input type="text" id="joinSection" placeholder="e.g. Section " />
+        <input type="text" id="joinSection" placeholder="e.g. Section B" />
       </div>
       <div class="field">
         <label for="classCodeInput">Class code</label>
@@ -282,11 +281,11 @@
 
       <div class="card">
         <h2>Register your group</h2>
-        <p class="hint">Pick a group name and list every member's full name and student ID. Groups need 4 to 6 members.</p>
+        <p class="hint">Your group name is assigned automatically. List every member's full name and student ID. Groups need 1 to 6 members.</p>
 
         <div class="field">
-          <label for="groupName">Group name</label>
-          <input type="text" id="groupName" placeholder="e.g. Data Dynamos" />
+          <label>Group name</label>
+          <span class="code-badge" id="groupNameDisplay">Checking…</span>
         </div>
 
         <div id="membersWrap"></div>
@@ -318,7 +317,7 @@
 
     <!-- Not logged in: login / sign up -->
     <div class="card auth-box" id="authCard">
-      <div class="auth-toggle">
+      <div class="auth-toggle" id="authToggleRow">
         <button id="loginToggleBtn" class="active" onclick="setAuthMode('login')">Log in</button>
         <button id="signupToggleBtn" onclick="setAuthMode('signup')">Create account</button>
       </div>
@@ -326,7 +325,21 @@
       <!-- Login form -->
       <div id="loginForm">
         <h2 style="margin-top:0;">Teacher log in</h2>
-        <p class="hint">Only you can see and manage your course's groups.</p>
+        <p class="hint">Each semester/course code/section has its own password, even under the same email.</p>
+        <div class="row2">
+          <div class="field">
+            <label for="loginSemester">Semester</label>
+            <input type="text" id="loginSemester" placeholder="e.g. Fall 2026" />
+          </div>
+          <div class="field">
+            <label for="loginCourseCode">Course code</label>
+            <input type="text" id="loginCourseCode" class="id-mono" placeholder="e.g. BUS301" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="loginSection">Section</label>
+          <input type="text" id="loginSection" placeholder="e.g. Section B" />
+        </div>
         <div class="field">
           <label for="loginEmail">Email</label>
           <input type="email" id="loginEmail" placeholder="you@university.edu" />
@@ -336,13 +349,16 @@
           <input type="password" id="loginPassword" placeholder="Your password" />
         </div>
         <button class="btn btn-primary btn-block" onclick="teacherLogin()" id="loginBtn">Log in</button>
+        <p class="hint" style="margin:10px 0 0; text-align:center;">
+          <button type="button" class="small-link" onclick="openForgotPassword()">Forgot password?</button>
+        </p>
         <div class="msg" id="loginMsg"></div>
       </div>
 
       <!-- Sign up form -->
       <div id="signupForm" style="display:none;">
         <h2 style="margin-top:0;">Create your course</h2>
-        <p class="hint">This creates a private roster only you can open. You'll get a class code to share with students.</p>
+        <p class="hint">This creates a private roster only you can open. You can reuse the same email for another semester/course/section — each one gets its own independent password.</p>
         <div class="row2">
           <div class="field">
             <label for="signupSemester">Semester</label>
@@ -376,8 +392,83 @@
           </div>
         </div>
         <button class="btn btn-primary btn-block" onclick="teacherSignup()" id="signupBtn">Create account</button>
+        <p class="hint" style="margin:10px 0 0; text-align:center;">
+          Reusing an email but forgot the password?
+          <button type="button" class="small-link" onclick="openForgotPassword()">Reset it</button>
+        </p>
         <div class="msg" id="signupMsg"></div>
       </div>
+
+      <!-- Forgot password: OTP flow -->
+      <div id="forgotForm" style="display:none;">
+        <h2 style="margin-top:0;">Reset your password</h2>
+
+        <!-- Step 1: request a code -->
+        <div id="forgotRequestStep">
+          <p class="hint">Enter the same semester, course code, section, and email you used to create this account.</p>
+          <div class="row2">
+            <div class="field">
+              <label for="forgotSemester">Semester</label>
+              <input type="text" id="forgotSemester" placeholder="e.g. Fall 2026" />
+            </div>
+            <div class="field">
+              <label for="forgotCourseCode">Course code</label>
+              <input type="text" id="forgotCourseCode" class="id-mono" placeholder="e.g. BUS301" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="forgotSection">Section</label>
+            <input type="text" id="forgotSection" placeholder="e.g. Section B" />
+          </div>
+          <div class="field">
+            <label for="forgotEmail">Email</label>
+            <input type="email" id="forgotEmail" placeholder="you@university.edu" />
+          </div>
+          <button class="btn btn-primary btn-block" onclick="sendOtpCode()" id="sendOtpBtn">Send code</button>
+        </div>
+
+        <!-- Step 2: enter the OTP -->
+        <div id="forgotOtpStep" style="display:none;">
+          <p class="hint">We sent a 6-digit code to <strong id="otpSentTo"></strong>. It expires in 10 minutes.</p>
+          <div class="field">
+            <label for="otpInput">6-digit code</label>
+            <input type="text" id="otpInput" class="id-mono" inputmode="numeric" maxlength="6" placeholder="123456" />
+          </div>
+          <button class="btn btn-primary btn-block" onclick="verifyOtpCode()" id="verifyOtpBtn">Verify code</button>
+          <p class="hint" style="margin:10px 0 0; text-align:center;">
+            Didn't get it? <button type="button" class="small-link" onclick="sendOtpCode()">Send another code</button>
+          </p>
+        </div>
+
+        <!-- Step 3: done -->
+        <div id="forgotDoneStep" style="display:none;">
+          <div class="msg show ok">Code confirmed! Check your email once more — we just sent you a secure link to set your new password. Open it on this device and it will finish right here in the app.</div>
+        </div>
+
+        <p class="hint" style="margin:14px 0 0; text-align:center;">
+          <button type="button" class="small-link" onclick="backToLoginFromForgot()">Back to log in</button>
+        </p>
+        <div class="msg" id="forgotMsg"></div>
+      </div>
+    </div>
+
+    <!-- Password reset link landed here directly from email -->
+    <div class="card auth-box" id="resetLinkCard" style="display:none;">
+      <h2 style="margin-top:0;">Set a new password</h2>
+      <p class="hint" id="resetLinkEmailNote"></p>
+      <div id="resetLinkForm" style="display:none;">
+        <div class="field">
+          <label for="resetLinkPassword">New password</label>
+          <input type="password" id="resetLinkPassword" placeholder="At least 6 characters" />
+        </div>
+        <div class="field">
+          <label for="resetLinkPassword2">Confirm new password</label>
+          <input type="password" id="resetLinkPassword2" placeholder="Repeat password" />
+        </div>
+        <button class="btn btn-primary btn-block" onclick="submitNewPasswordFromLink()" id="resetLinkSubmitBtn">Set new password</button>
+      </div>
+      <p class="hint err" id="resetLinkError" style="display:none; color:var(--rust);"></p>
+      <div class="msg" id="resetLinkMsg"></div>
     </div>
 
     <!-- Logged in: dashboard -->
@@ -437,11 +528,13 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
 import {
   getAuth, setPersistence, inMemoryPersistence,
-  createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut
+  createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail,
+  verifyPasswordResetCode, confirmPasswordReset
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, deleteDoc,
@@ -465,9 +558,21 @@ const db = getFirestore(app);
 setPersistence(auth, inMemoryPersistence).catch(() => {});
 
 /* ---------------- Config ---------------- */
-const MIN_MEMBERS = 4;
+const MIN_MEMBERS = 1;
 const MAX_MEMBERS = 6;
 const DEFAULT_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours, used for the first code at signup
+
+/* ---------------- EmailJS (OTP delivery) ---------------- */
+const EMAILJS_PUBLIC_KEY = "SCYEmc71B9TzI8FDl";
+const EMAILJS_SERVICE_ID = "service_13hei2i";
+const EMAILJS_TEMPLATE_ID = "template_hkg64nl";
+if(window.emailjs) window.emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+const OTP_LENGTH = 6;
+const OTP_VALID_MS = 10 * 60 * 1000; // 10 minutes
+const OTP_MAX_ATTEMPTS = 5;
+
+let pendingReset = null; // { authEmail, realEmail, semester, courseCode, section, docId }
 
 let memberRowCount = 0;
 let currentStudentCourse = null;   // { courseId, code, courseName }
@@ -514,6 +619,21 @@ function hideMsg(elId){
 }
 function isValidEmail(email){
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+function sameText(a, b){
+  return (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase();
+}
+// Builds a unique login identity from the teacher's real email plus their
+// semester/course code/section, using the "+tag" trick most providers
+// (Gmail, Outlook, etc.) support — mail still arrives in the same inbox,
+// but Firebase treats it as a separate account with its own password.
+function makeAuthEmail(realEmail, semester, courseCode, section){
+  const atIdx = realEmail.indexOf('@');
+  if(atIdx === -1) return realEmail;
+  const local = realEmail.slice(0, atIdx);
+  const domain = realEmail.slice(atIdx + 1);
+  const tag = [slugify(semester), slugify(courseCode), slugify(section)].filter(Boolean).join('-') || 'section';
+  return `${local}+${tag}@${domain}`;
 }
 function formatTimestamp(ts){
   try{
@@ -622,11 +742,10 @@ async function getCourseById(courseId){
   const snap = await getDoc(doc(db, 'courses', courseId));
   return snap.exists() ? snap.data() : null;
 }
-async function getMyCourse(uid){
+async function getMyCourses(uid){
   const q = query(collection(db, 'courses'), where('teacherUid', '==', uid));
   const snap = await getDocs(q);
-  if(snap.empty) return null;
-  return snap.docs[0].data();
+  return snap.docs.map(d => d.data());
 }
 async function getGroupsForCourse(courseId){
   const q = query(collection(db, 'groups'), where('courseId', '==', courseId));
@@ -699,7 +818,7 @@ async function joinClass(){
       showMsg('joinMsg', 'Could not find that course. Please check with your teacher.', 'err');
       return;
     }
-    const matches = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase();
+    const matches = sameText;
     if(!matches(semester, course.semester) || !matches(courseCode, course.courseCode) || !matches(courseNameInput, course.courseName) || !matches(section, course.section)){
       showMsg('joinMsg', "Those details don't match this class code. Please double-check the semester, course code, course name, and section with your teacher.", 'err');
       return;
@@ -711,6 +830,7 @@ async function joinClass(){
     document.getElementById('joinCard').style.display = 'none';
     document.getElementById('studentRegisterArea').style.display = 'block';
     loadTakenNames();
+    refreshAssignedGroupName();
   }catch(e){
     showMsg('joinMsg', 'Could not check that code right now: ' + (e && e.message ? e.message : e), 'err');
   }finally{
@@ -731,6 +851,37 @@ function leaveClass(){
 }
 
 /* ---------------- Student: load taken names ---------------- */
+/* ---------------- Student: auto-assigned group name (Group A .. Group Z) ---------------- */
+const GROUP_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+// Looks at every group already submitted for this course and returns the
+// first unused letter's "Group X" name, skipping any letters already taken
+// (including ones left behind by deleted groups being reused, which is fine).
+async function computeNextGroupName(courseId){
+  const groups = await getGroupsForCourse(courseId);
+  const taken = new Set();
+  groups.forEach(g => {
+    const m = /^Group ([A-Z])$/.exec(g.data.groupName || '');
+    if(m) taken.add(m[1]);
+  });
+  for(const letter of GROUP_LETTERS){
+    if(!taken.has(letter)) return 'Group ' + letter;
+  }
+  return null; // all 26 letters are in use
+}
+
+async function refreshAssignedGroupName(){
+  const display = document.getElementById('groupNameDisplay');
+  if(!currentStudentCourse || !display) return;
+  display.textContent = 'Checking…';
+  try{
+    const next = await computeNextGroupName(currentStudentCourse.courseId);
+    display.textContent = next || 'No names left (A–Z all used)';
+  }catch(e){
+    display.textContent = 'Could not check — will assign at submit';
+  }
+}
+
 async function loadTakenNames(){
   const wrap = document.getElementById('takenNamesWrap');
   if(!currentStudentCourse) return;
@@ -753,17 +904,12 @@ async function submitGroup(){
     showMsg('studentMsg', 'Please enter your class code first.', 'err');
     return;
   }
-  const groupNameRaw = document.getElementById('groupName').value.trim();
   const rows = Array.from(document.querySelectorAll('.member-row'));
   const members = rows.map(r => ({
     name: r.querySelector('.member-name').value.trim(),
     id: r.querySelector('.member-id').value.trim()
   }));
 
-  if(!groupNameRaw){
-    showMsg('studentMsg', 'Please enter a group name.', 'err');
-    return;
-  }
   if(members.length < MIN_MEMBERS || members.length > MAX_MEMBERS){
     showMsg('studentMsg', `Groups must have ${MIN_MEMBERS} to ${MAX_MEMBERS} members.`, 'err');
     return;
@@ -782,13 +928,6 @@ async function submitGroup(){
     return;
   }
 
-  const slug = slugify(groupNameRaw);
-  if(!slug){
-    showMsg('studentMsg', 'Please use a group name with letters or numbers.', 'err');
-    return;
-  }
-  const groupId = currentStudentCourse.courseId + '_' + slug;
-
   const submitBtn = document.getElementById('submitBtn');
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submitting…';
@@ -799,12 +938,6 @@ async function submitGroup(){
     const freshCode = await findCodeDoc(currentStudentCourse.code);
     if(!freshCode || isExpired(freshCode.expiresAt)){
       showMsg('studentMsg', 'This class code has expired. Please ask your teacher for a new one and rejoin.', 'err');
-      return;
-    }
-
-    const existingSnap = await getDoc(doc(db, 'groups', groupId));
-    if(existingSnap.exists()){
-      showMsg('studentMsg', 'That group name is already taken in this class. Please choose a different one.', 'err');
       return;
     }
 
@@ -820,18 +953,43 @@ async function submitGroup(){
       }
     }
 
-    await setDoc(doc(db, 'groups', groupId), {
-      courseId: currentStudentCourse.courseId,
-      code: currentStudentCourse.code,
-      groupName: groupNameRaw,
-      members: members,
-      submittedAt: serverTimestamp()
-    });
+    // Assign the next free "Group X" letter right now (not earlier), and
+    // retry a few times in case another student grabs the same letter in
+    // the moment between us checking and us writing.
+    let savedName = null;
+    for(let attempt = 0; attempt < GROUP_LETTERS.length && !savedName; attempt++){
+      const candidate = await computeNextGroupName(currentStudentCourse.courseId);
+      if(!candidate){
+        showMsg('studentMsg', 'This class already has 26 groups (Group A–Z). Please ask your teacher for help.', 'err');
+        return;
+      }
+      const candidateId = currentStudentCourse.courseId + '_' + slugify(candidate);
+      try{
+        const existingSnap = await getDoc(doc(db, 'groups', candidateId));
+        if(existingSnap.exists()) continue; // someone else just took this letter — loop and try the next one
 
-    showMsg('studentMsg', `"${groupNameRaw}" was submitted successfully with ${members.length} members.`, 'ok');
-    document.getElementById('groupName').value = '';
+        await setDoc(doc(db, 'groups', candidateId), {
+          courseId: currentStudentCourse.courseId,
+          code: currentStudentCourse.code,
+          groupName: candidate,
+          members: members,
+          submittedAt: serverTimestamp()
+        });
+        savedName = candidate;
+      }catch(e){
+        continue; // write collided or was rejected — try the next letter
+      }
+    }
+
+    if(!savedName){
+      showMsg('studentMsg', 'Could not find a free group name right now — please try submitting again.', 'err');
+      return;
+    }
+
+    showMsg('studentMsg', `"${savedName}" was submitted successfully with ${members.length} members.`, 'ok');
     document.querySelectorAll('.member-name, .member-id').forEach(i => i.value = '');
     loadTakenNames();
+    refreshAssignedGroupName();
   }catch(e){
     console.error('Submit group error:', e);
     showMsg('studentMsg', 'Something went wrong saving your group: ' + (e && e.message ? e.message : e), 'err');
@@ -845,13 +1003,211 @@ async function submitGroup(){
 function setAuthMode(mode){
   document.getElementById('loginToggleBtn').classList.toggle('active', mode === 'login');
   document.getElementById('signupToggleBtn').classList.toggle('active', mode === 'signup');
+  document.getElementById('authToggleRow').style.display = mode === 'forgot' ? 'none' : 'flex';
   document.getElementById('loginForm').style.display = mode === 'login' ? 'block' : 'none';
   document.getElementById('signupForm').style.display = mode === 'signup' ? 'block' : 'none';
+  document.getElementById('forgotForm').style.display = mode === 'forgot' ? 'block' : 'none';
   hideMsg('loginMsg');
   hideMsg('signupMsg');
+  hideMsg('forgotMsg');
 }
 
-/* ---------------- Teacher: sign up ---------------- */
+/* ---------------- Teacher: forgot password (OTP via EmailJS + Firebase reset) ---------------- */
+function generateOtp(){
+  let code = '';
+  for(let i = 0; i < OTP_LENGTH; i++) code += Math.floor(Math.random() * 10);
+  return code;
+}
+function resetDocId(authEmail){
+  return 'pr_' + authEmail.replace(/[^a-zA-Z0-9]/g, '_');
+}
+
+function openForgotPassword(){
+  const loginVisible = document.getElementById('loginForm').style.display !== 'none';
+  const prefix = loginVisible ? 'login' : 'signup';
+  document.getElementById('forgotSemester').value = document.getElementById(prefix + 'Semester').value.trim();
+  document.getElementById('forgotCourseCode').value = document.getElementById(prefix + 'CourseCode').value.trim();
+  document.getElementById('forgotSection').value = document.getElementById(prefix + 'Section').value.trim();
+  document.getElementById('forgotEmail').value = document.getElementById(prefix + 'Email').value.trim();
+  document.getElementById('forgotRequestStep').style.display = 'block';
+  document.getElementById('forgotOtpStep').style.display = 'none';
+  document.getElementById('forgotDoneStep').style.display = 'none';
+  document.getElementById('otpInput').value = '';
+  pendingReset = null;
+  setAuthMode('forgot');
+}
+
+function backToLoginFromForgot(){
+  pendingReset = null;
+  setAuthMode('login');
+}
+
+async function sendOtpCode(){
+  hideMsg('forgotMsg');
+  const semester = document.getElementById('forgotSemester').value.trim();
+  const courseCode = document.getElementById('forgotCourseCode').value.trim();
+  const section = document.getElementById('forgotSection').value.trim();
+  const email = document.getElementById('forgotEmail').value.trim().toLowerCase();
+  if(!semester || !courseCode || !section || !isValidEmail(email)){
+    showMsg('forgotMsg', 'Please fill in the semester, course code, section, and email.', 'err');
+    return;
+  }
+  const btn = document.getElementById('sendOtpBtn');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  try{
+    const authEmail = makeAuthEmail(email, semester, courseCode, section);
+    const docId = resetDocId(authEmail);
+    const otp = generateOtp();
+    const expiresAtMillis = Date.now() + OTP_VALID_MS;
+
+    await setDoc(doc(db, 'passwordResets', docId), {
+      otp, attempts: 0,
+      expiresAt: Timestamp.fromMillis(expiresAtMillis),
+      createdAt: serverTimestamp()
+    });
+
+    if(window.emailjs){
+      await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        email: email,
+        passcode: otp,
+        time: new Date(expiresAtMillis).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+    }
+
+    pendingReset = { authEmail, realEmail: email, semester, courseCode, section, docId };
+    document.getElementById('forgotRequestStep').style.display = 'none';
+    document.getElementById('forgotOtpStep').style.display = 'block';
+    document.getElementById('otpSentTo').textContent = email;
+    document.getElementById('otpInput').value = '';
+    showMsg('forgotMsg', `A 6-digit code was sent to ${email}. It expires in 10 minutes.`, 'ok');
+  }catch(e){
+    console.error('Send OTP error:', e);
+    showMsg('forgotMsg', 'Could not send the code right now: ' + (e && e.message ? e.message : e), 'err');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Send code';
+  }
+}
+
+async function verifyOtpCode(){
+  hideMsg('forgotMsg');
+  if(!pendingReset){
+    showMsg('forgotMsg', 'Please request a code first.', 'err');
+    return;
+  }
+  const typed = document.getElementById('otpInput').value.trim();
+  if(!/^[0-9]{6}$/.test(typed)){
+    showMsg('forgotMsg', 'Please enter the 6-digit code exactly as emailed.', 'err');
+    return;
+  }
+  const btn = document.getElementById('verifyOtpBtn');
+  btn.disabled = true;
+  btn.textContent = 'Checking…';
+  try{
+    const snap = await getDoc(doc(db, 'passwordResets', pendingReset.docId));
+    if(!snap.exists()){
+      showMsg('forgotMsg', 'That code has expired. Please request a new one.', 'err');
+      return;
+    }
+    const data = snap.data();
+    const expiresAtMillis = data.expiresAt && typeof data.expiresAt.toMillis === 'function' ? data.expiresAt.toMillis() : 0;
+    if(Date.now() > expiresAtMillis){
+      showMsg('forgotMsg', 'That code has expired. Please request a new one.', 'err');
+      return;
+    }
+    if((data.attempts || 0) >= OTP_MAX_ATTEMPTS){
+      showMsg('forgotMsg', 'Too many wrong attempts. Please request a new code.', 'err');
+      return;
+    }
+    if(data.otp !== typed){
+      try{
+        await setDoc(doc(db, 'passwordResets', pendingReset.docId), {
+          otp: data.otp, expiresAt: data.expiresAt, attempts: (data.attempts || 0) + 1
+        });
+      }catch(e){}
+      showMsg('forgotMsg', 'That code is not correct. Please check your email and try again.', 'err');
+      return;
+    }
+
+    // Code confirmed. Only Firebase itself is allowed to actually change a
+    // password, so this triggers Firebase's own official reset email now —
+    // the teacher already proved they own the inbox via the OTP above.
+    await sendPasswordResetEmail(auth, pendingReset.authEmail);
+    try{ await deleteDoc(doc(db, 'passwordResets', pendingReset.docId)); }catch(e){}
+
+    document.getElementById('forgotOtpStep').style.display = 'none';
+    document.getElementById('forgotDoneStep').style.display = 'block';
+  }catch(e){
+    console.error('Verify OTP error:', e);
+    showMsg('forgotMsg', 'Could not check that code right now: ' + (e && e.message ? e.message : e), 'err');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Verify code';
+  }
+}
+
+/* ---------------- Password reset link opened directly on this page ---------------- */
+async function checkForResetLink(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('mode') !== 'resetPassword' || !params.get('oobCode')) return;
+  const oobCode = params.get('oobCode');
+
+  switchTab('teacher');
+  document.getElementById('authCard').style.display = 'none';
+  document.getElementById('teacherContent').style.display = 'none';
+  document.getElementById('resetLinkCard').style.display = 'block';
+
+  try{
+    const email = await verifyPasswordResetCode(auth, oobCode);
+    document.getElementById('resetLinkEmailNote').textContent = 'Setting a new password for: ' + email;
+    document.getElementById('resetLinkForm').style.display = 'block';
+    document.getElementById('resetLinkError').style.display = 'none';
+    window.__resetOobCode = oobCode;
+  }catch(e){
+    console.error('Verify reset code error:', e);
+    document.getElementById('resetLinkForm').style.display = 'none';
+    const errEl = document.getElementById('resetLinkError');
+    errEl.style.display = 'block';
+    errEl.textContent = 'This link is expired or was already used. Please go back and request a new code.';
+  }
+}
+
+async function submitNewPasswordFromLink(){
+  const pass = document.getElementById('resetLinkPassword').value;
+  const pass2 = document.getElementById('resetLinkPassword2').value;
+  hideMsg('resetLinkMsg');
+  if(pass.length < 6){
+    showMsg('resetLinkMsg', 'Password must be at least 6 characters.', 'err');
+    return;
+  }
+  if(pass !== pass2){
+    showMsg('resetLinkMsg', 'Passwords do not match.', 'err');
+    return;
+  }
+  const btn = document.getElementById('resetLinkSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  try{
+    await confirmPasswordReset(auth, window.__resetOobCode, pass);
+    document.getElementById('resetLinkForm').style.display = 'none';
+    showMsg('resetLinkMsg', 'Password updated! You can now log in with your new password.', 'ok');
+    setTimeout(() => {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      document.getElementById('resetLinkCard').style.display = 'none';
+      document.getElementById('authCard').style.display = 'block';
+      setAuthMode('login');
+    }, 2500);
+  }catch(e){
+    console.error('Confirm reset error:', e);
+    showMsg('resetLinkMsg', friendlyAuthError(e), 'err');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Set new password';
+  }
+}
+
+
 async function teacherSignup(){
   hideMsg('signupMsg');
   const semester = document.getElementById('signupSemester').value.trim();
@@ -875,16 +1231,28 @@ async function teacherSignup(){
   signupBtn.textContent = 'Creating…';
 
   try{
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    const authEmail = makeAuthEmail(email, semester, courseCode, section);
+    let uid;
+    try{
+      const cred = await createUserWithEmailAndPassword(auth, authEmail, pass);
+      uid = cred.user.uid;
+    }catch(e){
+      if(e && e.code === 'auth/email-already-in-use'){
+        showMsg('signupMsg', 'You already created this exact semester + course code + section. Please log in instead, or check the details if this should be new.', 'err');
+        return;
+      }
+      showMsg('signupMsg', friendlyAuthError(e), 'err');
+      return;
+    }
 
     const courseId = doc(collection(db, 'courses')).id;
     await setDoc(doc(db, 'courses', courseId), {
-      courseId, semester, courseCode, courseName, section, teacherUid: cred.user.uid, createdAt: serverTimestamp()
+      courseId, semester, courseCode, courseName, section, teacherEmail: email, teacherUid: uid, createdAt: serverTimestamp()
     });
 
-    const { code, expiresAt } = await generateCodeForCourse(courseId, cred.user.uid, DEFAULT_DURATION_MS, null);
+    const { code, expiresAt } = await generateCodeForCourse(courseId, uid, DEFAULT_DURATION_MS, null);
 
-    currentTeacherCourse = { courseId, semester, courseCode, courseName, section, teacherUid: cred.user.uid, code, expiresAt };
+    currentTeacherCourse = { courseId, semester, courseCode, courseName, section, teacherUid: uid, code, expiresAt };
     openTeacherDashboard();
   }catch(e){
     console.error('Signup error:', e);
@@ -898,9 +1266,16 @@ async function teacherSignup(){
 /* ---------------- Teacher: log in ---------------- */
 async function teacherLogin(){
   hideMsg('loginMsg');
+  const semester = document.getElementById('loginSemester').value.trim();
+  const courseCode = document.getElementById('loginCourseCode').value.trim();
+  const section = document.getElementById('loginSection').value.trim();
   const email = document.getElementById('loginEmail').value.trim().toLowerCase();
   const pass = document.getElementById('loginPassword').value;
 
+  if(!semester || !courseCode || !section){
+    showMsg('loginMsg', 'Please enter the semester, course code, and section.', 'err');
+    return;
+  }
   if(!isValidEmail(email) || !pass){
     showMsg('loginMsg', 'Please enter your email and password.', 'err');
     return;
@@ -911,21 +1286,23 @@ async function teacherLogin(){
   loginBtn.textContent = 'Checking…';
 
   try{
-    const cred = await signInWithEmailAndPassword(auth, email, pass);
-    const course = await getMyCourse(cred.user.uid);
-    if(!course){
-      showMsg('loginMsg', 'We found your account, but no course is linked to it yet.', 'err');
+    const authEmail = makeAuthEmail(email, semester, courseCode, section);
+    const cred = await signInWithEmailAndPassword(auth, authEmail, pass);
+    const courses = await getMyCourses(cred.user.uid);
+    if(courses.length === 0){
+      showMsg('loginMsg', 'No course was found for this account.', 'err');
       return;
     }
+    const match = courses[0];
     currentTeacherCourse = {
-      courseId: course.courseId,
-      semester: course.semester,
-      courseCode: course.courseCode,
-      courseName: course.courseName,
-      section: course.section,
-      teacherUid: course.teacherUid,
-      code: course.currentCode,
-      expiresAt: course.currentCodeExpiresAt
+      courseId: match.courseId,
+      semester: match.semester,
+      courseCode: match.courseCode,
+      courseName: match.courseName,
+      section: match.section,
+      teacherUid: match.teacherUid,
+      code: match.currentCode,
+      expiresAt: match.currentCodeExpiresAt
     };
     openTeacherDashboard();
   }catch(e){
@@ -943,6 +1320,9 @@ function openTeacherDashboard(){
   document.getElementById('dashCourseName').textContent = currentTeacherCourse.courseName;
   document.getElementById('dashCourseMeta').textContent =
     [currentTeacherCourse.courseCode, currentTeacherCourse.section, currentTeacherCourse.semester].filter(Boolean).join(' · ');
+  document.getElementById('loginSemester').value = '';
+  document.getElementById('loginCourseCode').value = '';
+  document.getElementById('loginSection').value = '';
   document.getElementById('loginEmail').value = '';
   document.getElementById('loginPassword').value = '';
   document.getElementById('signupSemester').value = '';
@@ -1175,6 +1555,11 @@ window.leaveClass = leaveClass;
 window.submitGroup = submitGroup;
 window.setAuthMode = setAuthMode;
 window.teacherSignup = teacherSignup;
+window.openForgotPassword = openForgotPassword;
+window.backToLoginFromForgot = backToLoginFromForgot;
+window.sendOtpCode = sendOtpCode;
+window.verifyOtpCode = verifyOtpCode;
+window.submitNewPasswordFromLink = submitNewPasswordFromLink;
 window.teacherLogin = teacherLogin;
 window.teacherLogout = teacherLogout;
 window.copyCode = copyCode;
@@ -1186,6 +1571,7 @@ window.deleteGroup = deleteGroup;
 
 /* ---------------- Init ---------------- */
 updateMemberControls();
+checkForResetLink();
 </script>
 </body>
 </html>
